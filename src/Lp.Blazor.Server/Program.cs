@@ -1,5 +1,6 @@
 using Lp.Blazor.Server.Components;
 using Lp.Blazor.Server.Data;
+using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,9 +11,13 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<IOrderData>(factory =>
 {
     var orderData = new OrderData();
-    orderData.Load($"{Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)}\\Sample - Superstore.csv");
+    orderData.Load($".\\wwwroot\\Sample - Superstore.csv");
     return orderData;
 });
+
+//radzen services
+builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 
@@ -31,5 +36,6 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
 
 app.Run();

@@ -6,7 +6,9 @@
 - strongly type to a model
 - use a static 'data' instance to server the data
 - seems mostly an exercise it choosing visualization components
-- use a grid and some other plots to see how it looks.  
+- use a few views
+    - show raw data in a grid with some basic functionality
+    - show graphs of relevant slices
 - some visualization options
     - https://blazor.radzen.com/get-started
     - https://www.syncfusion.com/blazor-components

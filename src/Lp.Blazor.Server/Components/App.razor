@@ -6,15 +6,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="app.css" />
+    
     <link rel="stylesheet" href="Lp.Blazor.Server.styles.css" />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
+    <link rel="icon" type="image/png" href="favicon.png" />    
+    <style>
+        // Body
+        :root {
+            font-size: var(--rz-root-font-size);
+        }
+
+        body {
+            font-family: var(--rz-text-font-family);
+            color: var(--rz-text-color);
+            font-size: var(--rz-body-font-size);
+            line-height: var(--rz-body-line-height);
+            background-color: var(--rz-body-background-color);
+        }
+
+        a {
+            color: var(--rz-link-color);
+        }
+
+            a:hover,
+            a:focus {
+                color: var(--rz-link-hover-color);
+            }
+    </style>
+    <HeadOutlet @rendermode="InteractiveServer" />
+    <link href="_content/Radzen.Blazor/css/material-base.css" rel="stylesheet">
+    <link rel="stylesheet" href="app.css" />
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
 </body>
 
 </html>

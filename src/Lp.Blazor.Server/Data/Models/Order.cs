@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace Lp.Blazor.Server.Data.Models
 {
@@ -7,6 +8,7 @@ namespace Lp.Blazor.Server.Data.Models
         public int RowId { get; set; }
         public string OrderId { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }
+        public string Season => ToSeason(OrderDate);
         public DateTime ShipDate { get; set; }
         public string ShipMode { get; set; } = string.Empty;
         public string CustomerId { get; set; } = string.Empty;
@@ -26,5 +28,13 @@ namespace Lp.Blazor.Server.Data.Models
         public decimal Discount { get; set; }
         public decimal Profit { get; set; }
 
+        private string ToSeason(DateTime orderDate) => orderDate.Month switch
+        {
+            3 or 4 or 5 => "Spring",
+            6 or 7 or 8 => "Summer",
+            9 or 10 or 11 => "Fall",
+            12 or 1 or 2 => "Winter",
+            _ => throw new InvalidDataException($"Invalid month detected:{orderDate.Month}")
+        };
     }
 }
