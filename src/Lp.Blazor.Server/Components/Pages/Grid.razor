@@ -62,7 +62,7 @@
         <RadzenDataGridColumn TItem="Order" Property="OrderId" Title="OrderId" />
         <RadzenDataGridColumn TItem="Order" Property="OrderDate" Title="OrderDate">
             <Template Context="dataItem">
-                @dataItem.ShipDate.ToString("MM/dd/yyy")
+                @dataItem.OrderDate.ToString("MM/dd/yyy")
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Order" Property="Season" Title="Season">

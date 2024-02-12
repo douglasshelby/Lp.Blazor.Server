@@ -62,4 +62,11 @@ public class OrderDataTests
         var jan2014ProfitTotals = orderData.GetOrders().AsQueryable<Order>().Where(jan2014FallFilter).Sum(o => o.Profit);
         var jan2014QuantityTotals = orderData.GetOrders().AsQueryable<Order>().Where(jan2014FallFilter).Sum(o => o.Quantity);
     }
+
+    [Fact]
+    public void Years()
+    {
+        var years = orderData.GetOrders().GroupBy(o => o.OrderDate.Year).Select(g => g.Key);
+        var maxYear = orderData.GetOrders().Max(o => o.OrderDate.Year);
+    }
 }

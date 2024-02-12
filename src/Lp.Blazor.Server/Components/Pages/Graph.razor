@@ -99,6 +99,7 @@
     {
         return selectedCategories.Any() ? string.Join(",", selectedCategories) : "All Categories";
     }
+
     string FormatAsUSD(object value)
     {
         return ((double)value).ToString("C0", System.Globalization.CultureInfo.CurrentCulture);
@@ -113,6 +114,7 @@
 
         return string.Empty;
     }
+
     string FormatAsSeason(object value)
     {
         if (value != null)
