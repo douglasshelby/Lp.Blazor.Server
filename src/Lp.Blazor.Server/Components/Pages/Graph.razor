@@ -1,0 +1,159 @@
+﻿@page "/graphview"
+@using Lp.Blazor.Server.Data
+@using Lp.Blazor.Server.Data.Models
+@using Radzen
+@using Radzen.Blazor
+@using System;
+@using System.Linq.Dynamic.Core
+@using System.ComponentModel.DataAnnotations
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject IOrderData OrderData
+
+<RadzenCard>
+    <RadzenLabel Text="Select a Category" />
+    <RadzenDropDown @bind-Value=@selectedCategories Data=@CategoriesList Name="DropDownMultiple"
+                    Multiple=true AllowClear=true Placeholder="Select Categories" Style="width: 100%; max-width: 400px;" />
+</RadzenCard>
+
+<div Class="rz-p-0 rz-p-md-12">
+    <RadzenCard>
+        <RadzenLabel Text=@($"Sales by Season for year(s) {Years.First()} to {Years.Last()} for {FormatSelectedCategories()}") />
+        <RadzenChart>
+            @foreach (var year in Years)
+            {
+                <RadzenLineSeries Smooth="@_smooth" Data="@BySalesSeason(year)" CategoryProperty="Season" Title=@year.ToString() LineType="LineType.Solid" ValueProperty="Sales">
+                    <RadzenMarkers Visible="@_showMarkers" MarkerType="MarkerType.Square" />
+                    <RadzenSeriesDataLabels Visible="@_showDataLabels" />
+                </RadzenLineSeries>
+            }
+            <RadzenCategoryAxis Formatter="@FormatAsSeason" />
+            <RadzenValueAxis Formatter="@FormatAsUSD">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Sales" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </RadzenCard>
+</div>
+<div Class="rz-p-0 rz-p-md-12">
+    <RadzenCard>
+        <RadzenLabel Text=@($"Profits by Season for year(s) {Years.First()} to {Years.Last()} for {FormatSelectedCategories()}") />
+        <RadzenChart>
+            @foreach (var year in Years)
+            {
+                <RadzenLineSeries Smooth="@_smooth" Data="@ByProfitSeason(year)" CategoryProperty="Season" Title=@year.ToString() LineType="LineType.Solid" ValueProperty="Profit">
+                    <RadzenMarkers Visible="@_showMarkers" MarkerType="MarkerType.Square" />
+                    <RadzenSeriesDataLabels Visible="@_showDataLabels" />
+                </RadzenLineSeries>
+            }
+            <RadzenCategoryAxis Formatter="@FormatAsSeason" />
+            <RadzenValueAxis Formatter="@FormatAsUSD">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Profit" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </RadzenCard>
+</div>
+<div Class="rz-p-0 rz-p-md-12">
+    <RadzenCard>
+        <RadzenLabel Text=@($"Profits by Season for year(s) {Years.First()} to {Years.Last()} for {FormatSelectedCategories()}") />
+        <RadzenChart>
+            @foreach (var year in Years)
+            {
+                <RadzenLineSeries Smooth="@_smooth" Data="@ByQuantitySeason(year)" CategoryProperty="Season" Title=@year.ToString() LineType="LineType.Solid" ValueProperty="Quantity">
+                    <RadzenMarkers Visible="@_showMarkers" MarkerType="MarkerType.Square" />
+                    <RadzenSeriesDataLabels Visible="@_showDataLabels" />
+                </RadzenLineSeries>
+            }
+            <RadzenCategoryAxis Formatter="@FormatAsSeason" />
+            <RadzenValueAxis>
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Quantity" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </RadzenCard>
+</div>
+
+@code {
+
+    //lookup lists
+    IQueryable<int> Years => _orderQuery.GroupBy(o => o.OrderDate.Year).Select(g => g.Key).Order();
+    IQueryable<string> SubCategories => _orderQuery.GroupBy(o => o.SubCategory).Select(g => g.Key).Order();
+    List<string> CategoriesList => _orderQuery.GroupBy(o => o.Category).Select(g => g.Key).ToList();
+    List<string> selectedCategories = new List<string>();
+
+    //data
+    IQueryable<Order> _orderQuery;
+    //ui options
+    bool _smooth = false;
+    bool _showDataLabels = false;
+    bool _showMarkers = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _orderQuery = OrderData.GetOrders().AsQueryable<Order>();
+        await base.OnInitializedAsync();
+    }
+
+    string FormatSelectedCategories()
+    {
+        return selectedCategories.Any() ? string.Join(",", selectedCategories) : "All Categories";
+    }
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", System.Globalization.CultureInfo.CurrentCulture);
+    }
+
+    string FormatAsMonth(object value)
+    {
+        if (value != null)
+        {
+            return Convert.ToDateTime(value).ToString("MMM");
+        }
+
+        return string.Empty;
+    }
+    string FormatAsSeason(object value)
+    {
+        if (value != null)
+        {
+            return value.ToString();
+        }
+
+        return string.Empty;
+    }
+
+    IQueryable<GraphData> BySalesSeason(int year)
+    {
+        return _orderQuery
+        .Where(o => o.OrderDate.Year == year)
+        .Where(o => !selectedCategories.Any() || selectedCategories.Contains(o.Category))
+        .GroupBy(o => o.Season)
+        .Select(s => new GraphData { Season = s.Key, Sales = s.Sum(sl => sl.Sales) })
+        .OrderBy(x => x.OrderDate)
+        .AsQueryable();
+    }
+
+    IQueryable<GraphData> ByProfitSeason(int year)
+    {
+        return _orderQuery
+        .Where(o => o.OrderDate.Year == year)
+        .Where(o => !selectedCategories.Any() || selectedCategories.Contains(o.Category))
+        .GroupBy(o => o.Season)
+        .Select(s => new GraphData { Season = s.Key, Profit = s.Sum(sl => sl.Profit) })
+        .OrderBy(x => x.OrderDate)
+        .AsQueryable();
+    }
+
+    IQueryable<GraphData> ByQuantitySeason(int year)
+    {
+        return _orderQuery
+        .Where(o => o.OrderDate.Year == year)
+        .Where(o => !selectedCategories.Any() || selectedCategories.Contains(o.Category))
+        .GroupBy(o => o.Season)
+        .Select(s => new GraphData { Season = s.Key, Quantity = s.Sum(sl => sl.Quantity) })
+        .OrderBy(x => x.OrderDate)
+        .AsQueryable();
+    }
+}
