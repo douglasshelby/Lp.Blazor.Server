@@ -13,22 +13,17 @@
 
 
 <RadzenMenu>
-    <RadzenMenuItem Text="Grid Options">
+@*     <RadzenMenuItem Text="Grid Options">
         <RadzenMenuItem Text="Paging" Icon=@(_pagingEnabled?"check_circle":"circle") Value=@_pagingEnabled Click=@(()=>_pagingEnabled = !_pagingEnabled )></RadzenMenuItem>
         <RadzenMenuItem Text="Grouping" Icon=@(_allowGrouping?"check_circle":"circle") Value=@_allowGrouping Click=@(()=>_allowGrouping = !_allowGrouping)></RadzenMenuItem>
-    </RadzenMenuItem>
+    </RadzenMenuItem> *@
 </RadzenMenu>
 
 <RadzenCard>
     <RadzenCard>
-        <RadzenButton ButtonType="ButtonType.Button" Text="Load" Click=@(()=> Search()) IsBusy=@(_isLoading) />
         <RadzenButton ButtonType="ButtonType.Button" Text="Clear Filters" Click=@(()=>OnClearFilters()) />
+        <RadzenButton ButtonType="ButtonType.Button" Text="Load" Click=@(()=> Search()) IsBusy=@(_isLoading) />
     </RadzenCard>
-    @*         <RadzenCheckBox @bind-Value=@_groupsExpanded Name="ExpandGroups" TValue="bool?" TriState="true" />
-    <RadzenLabel Text="All groups expanded" Component="ExpandGroups" /> *@
-    @*         <RadzenCheckBox @bind-Value=@_pagingEnabled Name="EnabledPaging" TValue="bool"/>
-    <RadzenLabel Text="Enable Paging" Component="EnabledPaging" /> *@
-
 </RadzenCard>
 
 <RadzenDataGrid @ref="grid"
@@ -57,11 +52,7 @@
                 ColumnWidth="120px"
                 IsLoading=@_isLoading
                 LogicalFilterOperator="LogicalFilterOperator.And"
-                FilterCleared=@OnFilterCleared
-                Sort="@ShowLoading"
-                Page="@ShowLoading"
-                Group="@ShowLoading"
-                Filter="@ShowLoading"
+
                 class="m-10">
     <GroupHeaderTemplate>
         @context.GroupDescriptor.GetTitle(): @(context.Data.Key ?? "")
@@ -164,18 +155,15 @@
         await base.OnInitializedAsync();
     }
 
-    async Task OnFilterCleared()
-    {
-        //await Task.FromResult(Search());
-
-    }
-
     async Task OnClearFilters()
     {
-        foreach (var col in grid.ColumnsCollection)
+        await Task.Run(() =>
         {
-            grid.ClearFilter(col);
-        }
+            foreach (var col in grid.ColumnsCollection)
+            {
+                grid.ClearFilter(col);
+            }
+        });
         LastFilter = string.Empty;
     }
 
