@@ -10,33 +10,19 @@
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IOrderData OrderData
-<div class="col-md-10">
-    <RadzenMenu>
-        <RadzenMenuItem Text="Grid Options">
-            <RadzenMenuItem Text="Virtualization" Icon=@(_enableVirtualization?"check_circle":"circle") Value=@_enableVirtualization Click=@((args)=>_enableVirtualization = !_enableVirtualization)></RadzenMenuItem>
-            <RadzenMenuItem Text="Paging" Icon=@(_pagingEnabled?"check_circle":"circle") Value=@_pagingEnabled Click=@((args)=>_pagingEnabled = !_pagingEnabled)></RadzenMenuItem>
-            <RadzenMenuItem Text="Grouping" Icon=@(_allowGrouping?"check_circle":"circle") Value=@_allowGrouping Click=@((args)=>_allowGrouping = !_allowGrouping)></RadzenMenuItem>
-        </RadzenMenuItem>
-    </RadzenMenu>
-</div>
+
+
+<RadzenMenu>
+    <RadzenMenuItem Text="Grid Options">
+        <RadzenMenuItem Text="Paging" Icon=@(_pagingEnabled?"check_circle":"circle") Value=@_pagingEnabled Click=@(()=>_pagingEnabled = !_pagingEnabled )></RadzenMenuItem>
+        <RadzenMenuItem Text="Grouping" Icon=@(_allowGrouping?"check_circle":"circle") Value=@_allowGrouping Click=@(()=>_allowGrouping = !_allowGrouping)></RadzenMenuItem>
+    </RadzenMenuItem>
+</RadzenMenu>
+
 <RadzenCard>
     <RadzenCard>
-        <div class="row">
-            <div class="col-md-5">
-                <RadzenTemplateForm TItem="QueryOptions" Data=@_queryOptions Submit=@Search>
-                    <RadzenFieldset Text="Query Parameters">
-                        <RadzenLabel Text="Start Date" Component="StartDate" Style="margin-right: 8px; vertical-align: middle;" />
-                        <RadzenDatePicker @ref=startDate Name="StartDate" @bind-Value=@_queryOptions.StartDate ShowTime=false DateFormat="MM/dd/yyyy" Min="@_minDate" Max="@_maxDate" />
-                        <RadzenCustomValidator Style="margin-right: 8px; vertical-align: middle;" Component="StartDate" Validator="@(() => _queryOptions.Validate().Count() == 0)" Text="Must be before End Date" />
-                        <RadzenLabel Text="End Date" Component="EndDate" Style="margin-right: 8px; vertical-align: middle;" />
-                        <RadzenDatePicker @ref=endDate Name="EndDate" @bind-Value=@_queryOptions.EndDate ShowTime=false DateFormat="MM/dd/yyyy" Min="@_minDate" Max="@_maxDate" />
-                        <RadzenCustomValidator Style="margin-right: 8px; vertical-align: middle;" Component="EndDate" Validator="@(() => _queryOptions.Validate().Count() == 0)" Text="Must be after Start Date" />
-                    </RadzenFieldset>
-
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Load" IsBusy=@(_isLoading) />
-                </RadzenTemplateForm>
-            </div>
-        </div>
+        <RadzenButton ButtonType="ButtonType.Button" Text="Load" Click=@(()=> Search()) IsBusy=@(_isLoading) />
+        <RadzenButton ButtonType="ButtonType.Button" Text="Clear Filters" Click=@(()=>OnClearFilters()) />
     </RadzenCard>
     @*         <RadzenCheckBox @bind-Value=@_groupsExpanded Name="ExpandGroups" TValue="bool?" TriState="true" />
     <RadzenLabel Text="All groups expanded" Component="ExpandGroups" /> *@
@@ -46,7 +32,7 @@
 </RadzenCard>
 
 <RadzenDataGrid @ref="grid"
-                LoadData="@LoadData"
+                LoadData="@OnLoadData"
                 Count="@_count"
                 AllowFiltering="true"
                 AllowColumnResize="true"
@@ -54,12 +40,14 @@
                 AllowVirtualization=_enableVirtualization
                 FilterMode="FilterMode.Advanced"
                 AllowSorting="true"
-                PageSize="200"
+                PageSize=@_pageSize
                 PageTitleFormat=""
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                PageSizeOptions=@_pageSizeOptions
+                PageSizeChanged=@OnPageSizeChanged
                 AllowPaging=@_pagingEnabled
                 Density="Density.Compact"
                 GridLines=DataGridGridLines.Default
-                PagerHorizontalAlign="HorizontalAlign.Left"
                 AllowGrouping=_allowGrouping
                 ShowGroupExpandColumn=@_showGroupExpandColumn
                 GroupRowRender="OnGroupRowRender"
@@ -68,7 +56,8 @@
                 TItem="Order"
                 ColumnWidth="120px"
                 IsLoading=@_isLoading
-                LogicalFilterOperator="LogicalFilterOperator.Or"
+                LogicalFilterOperator="LogicalFilterOperator.And"
+                FilterCleared=@OnFilterCleared
                 Sort="@ShowLoading"
                 Page="@ShowLoading"
                 Group="@ShowLoading"
@@ -102,7 +91,7 @@
         <RadzenDataGridColumn TItem="Order" Property="ShipMode" Title="ShipMode" />
         <RadzenDataGridColumn TItem="Order" Property="Sales" Title="Sales" Width="200px">
             <FooterTemplate>
-                <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", _orders?.Sum(o => o.Sales))</b>
+                <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", _salesTotal)</b>
             </FooterTemplate>
             <GroupFooterTemplate>
                 <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", context.Data.Items.Cast<Order>().Sum(o => o.Sales))</b>
@@ -110,7 +99,7 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Order" Property="Quantity" Title="Qty">
             <FooterTemplate>
-                <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", _orders?.Sum(o => o.Quantity))</b>
+                <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0}", _quantityTotal)</b>
             </FooterTemplate>
             <GroupFooterTemplate>
                 <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0}", context.Data.Items.Cast<Order>().Sum(o => o.Quantity))</b>
@@ -118,7 +107,7 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Order" Property="Profit" Title="Profit">
             <FooterTemplate>
-                <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", _orders?.Sum(o => o.Profit))</b>
+                <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", _profitTotal)</b>
             </FooterTemplate>
             <GroupFooterTemplate>
                 <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", context.Data.Items.Cast<Order>().Sum(o => o.Profit))</b>
@@ -140,8 +129,13 @@
     RadzenDataGrid<Order> grid;
     RadzenDatePicker<DateTime?> startDate;
     RadzenDatePicker<DateTime?> endDate;
+
+    //data
     IEnumerable<Order> _orders = new List<Order>();
     IQueryable<Order> _orderQuery;
+    decimal _salesTotal;
+    decimal _profitTotal;
+    int _quantityTotal;
 
     int _count = 0;
     bool _isLoading = false;
@@ -152,25 +146,43 @@
     bool _enableVirtualization = false;
     bool _allowGrouping = false;
     int _pageSize = 20;
-    IEnumerable<int> _pageSizeOptions = new int[] { 10, 20, 30 };
+    IEnumerable<int> _pageSizeOptions = new int[] { 20, 50, 100 };
 
-    //query options
-    QueryOptions _queryOptions = new QueryOptions();
-    DateTime? _minDate;
-    DateTime? _maxDate;
-    DateTime? _startDate = DateTime.Now;
-    DateTime? _endDate = DateTime.Now;
-
-    string? _lastFilter = null;
+    string? _lastFilter;
+    string? LastFilter
+    {
+        get
+        {
+            return string.IsNullOrEmpty(_lastFilter) ? " 1 = 1 " : _lastFilter;
+        }
+        set { _lastFilter = value; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        var orders = OrderData.GetOrders();
-        _queryOptions.StartDate = _queryOptions.MinStartDate = orders.Min(o => o.OrderDate);
-        _queryOptions.EndDate = _queryOptions.MaxEndDate = orders.Max(o => o.OrderDate);
+        _orderQuery = OrderData.GetOrders().AsQueryable<Order>();
         await base.OnInitializedAsync();
     }
 
+    async Task OnFilterCleared()
+    {
+        //await Task.FromResult(Search());
+
+    }
+
+    async Task OnClearFilters()
+    {
+        foreach (var col in grid.ColumnsCollection)
+        {
+            grid.ClearFilter(col);
+        }
+        LastFilter = string.Empty;
+    }
+
+    async Task OnPageSizeChanged(int pageSize)
+    {
+        await Task.FromResult(_pageSize = pageSize);
+    }
 
     async Task ShowLoading()
     {
@@ -183,44 +195,39 @@
 
     async Task Search()
     {
-        await LoadData(new LoadDataArgs
+        await OnLoadData(new LoadDataArgs
             {
                 Top = _pageSize,
                 Skip = 0
             });
     }
 
-    bool DateValidator()
-    {
-        var results = _queryOptions.Validate(null);
-        if (results.Count() == 0) return true;
-        return false;
-    }
-
-    async Task LoadData(LoadDataArgs args)
+    async Task OnLoadData(LoadDataArgs args)
     {
         await ShowLoading();
 
         var query = OrderData.GetOrders().AsQueryable<Order>();
-        query
-            .Where(o => o.OrderDate >= _startDate)
-            .Where(o => o.OrderDate <= _endDate);
 
-        if (!string.IsNullOrEmpty(args.Filter) && _lastFilter != args.Filter)
+        if (!string.IsNullOrEmpty(args.Filter) && LastFilter != args.Filter)
         {
             args.Skip = 0;
         }
-        Console.WriteLine($"Skip: {args.Skip}, Top: {args.Top}");
 
         if (!string.IsNullOrEmpty(args.Filter))
         {
-            _lastFilter = args.Filter;
+            LastFilter = args.Filter;
             query = query.Where(args.Filter);
             _count = query.Count();
+            _profitTotal = query.Sum(o => o.Profit);
+            _quantityTotal = query.Sum(o => o.Quantity);
+            _salesTotal = query.Sum(o => o.Sales);
         }
         else
         {
             _count = OrderData.GetOrders().Count();
+            _profitTotal = OrderData.GetOrders().Sum(o => o.Profit);
+            _quantityTotal = OrderData.GetOrders().Sum(o => o.Quantity);
+            _salesTotal = OrderData.GetOrders().Sum(o => o.Sales);
         }
 
         if (!string.IsNullOrEmpty(args.OrderBy))
