@@ -12,7 +12,6 @@
 @inject IOrderData OrderData
 
 <RadzenCard>
-    <RadzenLabel Text="Select a Category" />
     <RadzenDropDown @bind-Value=@selectedCategories Data=@CategoriesList Name="DropDownMultiple"
                     Multiple=true AllowClear=true Placeholder="Select Categories" Style="width: 100%; max-width: 400px;" />
 </RadzenCard>
@@ -126,13 +125,15 @@
 
     IQueryable<GraphData> BySalesSeason(int year)
     {
-        return _orderQuery
+        var sales = _orderQuery
         .Where(o => o.OrderDate.Year == year)
         .Where(o => !selectedCategories.Any() || selectedCategories.Contains(o.Category))
         .GroupBy(o => o.Season)
-        .Select(s => new GraphData { Season = s.Key, Sales = s.Sum(sl => sl.Sales) })
-        .OrderBy(x => x.OrderDate)
+        .Select(s => new GraphData { Season = s.Key, Sales = s.Sum(sl => sl.Sales) })        
+        .OrderBy(s => s.Season)
         .AsQueryable();
+
+        return sales;
     }
 
     IQueryable<GraphData> ByProfitSeason(int year)
@@ -142,7 +143,7 @@
         .Where(o => !selectedCategories.Any() || selectedCategories.Contains(o.Category))
         .GroupBy(o => o.Season)
         .Select(s => new GraphData { Season = s.Key, Profit = s.Sum(sl => sl.Profit) })
-        .OrderBy(x => x.OrderDate)
+        .OrderBy(s => s.Season)
         .AsQueryable();
     }
 
@@ -153,7 +154,7 @@
         .Where(o => !selectedCategories.Any() || selectedCategories.Contains(o.Category))
         .GroupBy(o => o.Season)
         .Select(s => new GraphData { Season = s.Key, Quantity = s.Sum(sl => sl.Quantity) })
-        .OrderBy(x => x.OrderDate)
+        .OrderBy(s => s.Season)
         .AsQueryable();
     }
 }
